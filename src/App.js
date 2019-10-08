@@ -1,24 +1,33 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useEffect, useState } from 'react';
 import './App.css';
+import WorkOrder from "./forms/WorkOrder";
+import { api } from "./api";
+import camelcaseKeys from "camelcase-keys";
 
-function App() {
+const App = () => {
+  useEffect(() => {
+    const login = async () => {
+      const response = await fetch('http://192.168.1.41:8000/api/v1/core/sign-in', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body : JSON.stringify({
+          username: "nsoft",
+          password: "samurai1234"
+        })
+      });
+      const {token} = await response.json();
+      localStorage.setItem('token', token);
+    };
+
+    login();
+    return () => {
+    };
+  }, []);
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <WorkOrder />
     </div>
   );
 }
