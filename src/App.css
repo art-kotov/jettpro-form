@@ -9,3 +9,7 @@
 form > * {
     display: block;
 }
+hr {
+    border-color: red;
+    margin-bottom: 30px;
+}
