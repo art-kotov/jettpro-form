@@ -42,24 +42,24 @@ const WorkOrder = ({init}) => {
       render={({ values, setFieldValue }) => (
         <div className="jet-form-wrapper">
         <Form>
-{/*          <Field
+          <Field
             component={DatePicker}
-            selected={values.date}
+            selected={new Date(values.date)}
             onChange={date => {
               !!date ? setFieldValue("date", date) : setFieldValue("date", "");
             }}
           />
-          <ErrorMessage name="date" />*/}
+          <ErrorMessage name="date" />
 
           <Field component="select" name="station">
-            <option value="first">first</option>
+            <option value="DTW">DTW</option>
             <option value="second">second</option>
             <option value="third">third</option>
           </Field>
           <ErrorMessage name="station" />
 
           <Field component="select" name="customer">
-            <option value="first">first</option>
+            <option value="RW">RW</option>
             <option value="second">second</option>
             <option value="third">third</option>
           </Field>
@@ -68,31 +68,31 @@ const WorkOrder = ({init}) => {
           <Field name="customerWo" />
           <ErrorMessage name="customerWo" />
 
-          <Field name="contollerName" />
-          <ErrorMessage name="contollerName" />
+          <Field name="controller" />
+          <ErrorMessage name="controller" />
 
-          <Field component="select" name="aircraftType">
+          <Field component="select" name="aircraft">
+            <option value="E-175">E-175</option>
+            <option value="second">second</option>
+            <option value="third">third</option>
+          </Field>
+          <ErrorMessage name="aircraft" />
+
+          <Field name="aircraftReg" />
+          <ErrorMessage name="aircraftReg" />
+
+          <Field name="aircraftLog" />
+          <ErrorMessage name="aircraftLog" />
+
+          <Field component="select" name="flightNumber">
             <option value="first">first</option>
             <option value="second">second</option>
             <option value="third">third</option>
           </Field>
-          <ErrorMessage name="aircraftType" />
+          <ErrorMessage name="flightNumber" />
 
-          <Field name="aircraftRegistration" />
-          <ErrorMessage name="aircraftRegistration" />
-
-          <Field name="aircraftLogPage" />
-          <ErrorMessage name="aircraftLogPage" />
-
-          <Field component="select" name="outboundFlight">
-            <option value="first">first</option>
-            <option value="second">second</option>
-            <option value="third">third</option>
-          </Field>
-          <ErrorMessage name="outboundFlight" />
-
-          <Field name="timeReceiveCall" />
-          <ErrorMessage name="timeReceiveCall" />
+          <Field name="callTime" />
+          <ErrorMessage name="callTime" />
 
           <Field name="timeTechArrives" />
           <ErrorMessage name="timeTechArrives" />
@@ -100,23 +100,30 @@ const WorkOrder = ({init}) => {
           <Field type="date" name="dateTechArrives" />
           <ErrorMessage name="dateTechArrives" />
 
-          <Field component="select" name="mxDelay">
+          <Field component="select" name="departDelay">
             <option value={true}>Yes</option>
             <option value={false}>No</option>
           </Field>
-          <ErrorMessage name="mxDelay" />
+          <ErrorMessage name="departDelay" />
 
-          <Field component="select" name="rii">
-            <option value="true">Yes</option>
-            <option value="false">No</option>
+          <Field component="select" name="riiStatus">
+            <option value={true}>Yes</option>
+            <option value={false}>No</option>
           </Field>
-          <ErrorMessage name="rii" />
+          <ErrorMessage name="riiStatus" />
 
           <Field name="riiDetail" />
           <ErrorMessage name="riiDetail" />
 
-          <Field type="date" name="departureTime" />
-          <ErrorMessage name="departureTime" />
+          <Field type="date" name="departScheduledTime" />
+          <Field
+            component={DatePicker}
+            selected={new Date(values.departScheduledTime)}
+            onChange={date => {
+              !!date ? setFieldValue("departScheduledTime", date) : setFieldValue("departScheduledTime", "");
+            }}
+          />
+          <ErrorMessage name="departScheduledTime" />
 
 {/*          <FieldArray
             name="discrepancies"
