@@ -369,7 +369,63 @@ const WorkOrder = ({ init }) => {
               name="notes"
             />
             <ErrorMessage name="notes"/>
+            <hr/>
+            sign off
+            <FieldArray
+              name="techtimes"
+              render={({ remove, push, name }) => (
+                <div>
+                  {values[name].map((_, index) => {
+                    console.log(values[name][index].arrivedTime);
+                    return (
+                      <div key={index}>
+                        <Field
+                          component={DatePicker}
+                          selected={new Date(values[name][index].arrivedTime)}
+                          onChange={date => {
+                            !!date ? setFieldValue(`${name}.${index}.arrivedTime`, date) : setFieldValue(`${name}.${index}.arrivedTime`, "");
+                          }}
+                        />
+                        <Field name={`${name}.${index}.arrivedTime`}/>
+                        <ErrorMessage name={`${name}.${index}.arrivedTime`}/>
 
+                        <Field
+                          component={DatePicker}
+                          selected={new Date(values[name][index].soReleasedDate)}
+                          onChange={date => {
+                            !!date ? setFieldValue(`${name}.${index}.soReleasedDate`, date) : setFieldValue(`${name}.${index}.soReleasedDate`, "");
+                          }}
+                        />
+                        <Field name={`${name}.${index}.soReleasedDate`}/>
+                        <ErrorMessage name={`${name}.${index}.soReleasedDate`}/>
+
+                        <Field
+                          component={DatePicker}
+                          selected={new Date(values[name][index].soTaskscompletedDate)}
+                          onChange={date => {
+                            !!date ? setFieldValue(`${name}.${index}.soTaskscompletedDate`, date) : setFieldValue(`${name}.${index}.soTaskscompletedDate`, "");
+                          }}
+                        />
+                        <Field name={`${name}.${index}.soTaskscompletedDate`}/>
+                        <ErrorMessage name={`${name}.${index}.soTaskscompletedDate`}/>
+                        <Field component="select" name="soReleaseType">
+                          <option value="AP">AP</option>
+                          <option value="PA">PA</option>
+                        </Field>
+                        <Field name={`${name}.${index}.otherDetails`}/>
+                        <ErrorMessage name={`${name}.${index}.otherDetails`}/>
+                        <button type="button" onClick={() => remove(index)}>
+                          -
+                        </button>
+                      </div>
+                    )
+                  })}
+                  <button type="button" onClick={() => push("")}>
+                    Add another Discrepancy
+                  </button>
+                </div>
+              )}
+            />
             {/*
 
           <FieldArray
