@@ -10,13 +10,21 @@ import "react-datepicker/dist/react-datepicker.css";
 import { api } from '../api'
 import camelcaseKeys from "camelcase-keys";
 
-const fetchData = {
-  station: "first"
-};
 
-const getAllData = (addressArray) => {
+const addressArray = [
+  {'customer': 'core/customer/'}
+]
+
+
+const getAllData = (addressArray, defaultApi) => {
   return Promise.all(addressArray.map(i =>
-    fetch(i)
+    fetch(`${defaultApi}${i}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `JWT ${localStorage.getItem('token')}`
+      }
+    })
       .then(response => response.json())
   ))
 };
@@ -24,6 +32,7 @@ const getAllData = (addressArray) => {
 
 const WorkOrder = ({ init }) => {
   const [initialValue, setValue] = useState({});
+  const [fetchValue, setFetchValue] = useState({});
 
   useEffect(() => {
     const asyncF = async () => {
@@ -32,6 +41,10 @@ const WorkOrder = ({ init }) => {
       setValue(camelcaseKeys(data, {
         deep: true
       }));
+
+    //  fetch  data for select
+      const otherData = await getAllData(addressArray, 'http://192.168.1.41:8000/api/v1/');
+      console.log('od', otherData);
     };
     asyncF();
     return () => {
