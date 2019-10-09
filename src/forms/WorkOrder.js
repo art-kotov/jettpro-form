@@ -7,49 +7,73 @@ import snakeCase from "snakecase-keys";
 import "react-datepicker/dist/react-datepicker.css";
 
 // Api
-import { api } from '../api'
+import { api, address, headers } from '../api'
 import camelcaseKeys from "camelcase-keys";
 
 
 const addressArray = [
-  {'customer': 'core/customer/'}
-]
+  {
+    name: "stations",
+    address: `${address}core/station`
+  },
+  {
+    name: "customers",
+    address:  `${address}core/customer`
+  }
+];
 
+const getAllData = async array => {
+  return await Promise.all(array.map(({address}) => fetch(address, {
+    method: 'GET',
+    headers
+  }).then(data => {
 
-const getAllData = (addressArray, defaultApi) => {
-  return Promise.all(addressArray.map(i =>
-    fetch(`${defaultApi}${i}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `JWT ${localStorage.getItem('token')}`
-      }
-    })
-      .then(response => response.json())
-  ))
+    return data.status === 200 ? data.json() : 'error'
+  })));
 };
+
+
 
 
 const WorkOrder = ({ init }) => {
   const [initialValue, setValue] = useState({});
-  const [fetchValue, setFetchValue] = useState({});
+  const [selects, setSelects] = useState({});
 
   useEffect(() => {
-    const asyncF = async () => {
-      const response = await api.workOrderForm.fetch('256450');
-      const data = await response.json();
-      setValue(camelcaseKeys(data, {
-        deep: true
-      }));
+    const fetchFormData = async () => {
+      try {
+        const response = await api.workOrderForm.fetch('256450');
+        const data = await response.json();
+        setValue(camelcaseKeys(data, {
+          deep: true
+        }));
 
-    //  fetch  data for select
-      const otherData = await getAllData(addressArray, 'http://192.168.1.41:8000/api/v1/');
-      console.log('od', otherData);
+        //  fetch  data for selects
+        const otherData = await getAllData(addressArray);
+        
+        const error = otherData.some(i => i === 'error');
+        if(error) throw new Error('oops');
+
+        otherData.forEach((value, index) => {
+          setSelects(prevData => {
+            const addressArrElName = {addressArray[index].name: value}
+            prevData[addressArrElName] = value;
+
+            return prevData
+          })
+        })
+
+
+      } catch (e) {
+        console.log(e)
+      }
     };
-    asyncF();
+    fetchFormData();
     return () => {
     };
   }, []);
+
+  console.log('selects', selects);
   return (
     Object.keys(initialValue).length !== 0 && <Formik
       initialValues={initialValue}
@@ -68,9 +92,8 @@ const WorkOrder = ({ init }) => {
             <ErrorMessage name="date"/>
             station
             <Field component="select" name="station">
-              <option value="DTW">DTW</option>
-              <option value="second">second</option>
-              <option value="third">third</option>
+              {Object.keys(selects).length !== 0
+              && selects.stations.results.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
             </Field>
             <ErrorMessage name="station"/>
             customer
@@ -389,7 +412,6 @@ const WorkOrder = ({ init }) => {
               render={({ remove, push, name }) => (
                 <div>
                   {values[name].map((_, index) => {
-                    console.log(values[name][index].arrivedTime);
                     return (
                       <div key={index}>
                         <Field
