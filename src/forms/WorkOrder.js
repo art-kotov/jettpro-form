@@ -10,6 +10,9 @@ import "react-datepicker/dist/react-datepicker.css";
 import { api, address, headers } from '../api'
 import camelcaseKeys from "camelcase-keys";
 
+// Helper
+const asyncDelay = delay =>
+  new Promise(resolve => setTimeout(resolve, delay));
 
 const addressArray = [
   {
@@ -18,65 +21,69 @@ const addressArray = [
   },
   {
     name: "customers",
-    address:  `${address}core/customer`
-  }
+    address: `${address}core/customer`
+  },
+  {
+    name: "aircrafts",
+    address: `${address}core/aircraft`
+  },
+  {
+    name: "parts",
+    address: `${address}jems/g2-part`
+  },
 ];
 
 const getAllData = async array => {
-  return await Promise.all(array.map(({address}) => fetch(address, {
+  return await Promise.all(array.map(({ address }) => fetch(address, {
     method: 'GET',
     headers
   }).then(data => {
-
     return data.status === 200 ? data.json() : 'error'
   })));
 };
 
 
-
-
-const WorkOrder = ({ init }) => {
-  const [initialValue, setValue] = useState({});
-  const [selects, setSelects] = useState({});
+const WorkOrder = () => {
+  const [initialValues, setInitial] = useState(false);
+  const [additionalValues, setAdditional] = useState(false);
 
   useEffect(() => {
-    const fetchFormData = async () => {
+    const fetchAll = async () => {
       try {
         const response = await api.workOrderForm.fetch('256450');
         const data = await response.json();
-        setValue(camelcaseKeys(data, {
+        setInitial(camelcaseKeys(data, {
           deep: true
         }));
 
         //  fetch  data for selects
         const otherData = await getAllData(addressArray);
-        
+
         const error = otherData.some(i => i === 'error');
-        if(error) throw new Error('oops');
+        if (error) throw new Error('oops');
 
-        otherData.forEach((value, index) => {
-          setSelects(prevData => {
-            const addressArrElName = {addressArray[index].name: value}
-            prevData[addressArrElName] = value;
-
-            return prevData
-          })
-        })
+        console.log(otherData);
+        setAdditional(
+          {
+            "stations": otherData[0].results,
+            "customers": otherData[1].results,
+            "aircrafts": otherData[2].results,
+            "parts": otherData[3].results,
+          }
+        )
 
 
       } catch (e) {
         console.log(e)
       }
     };
-    fetchFormData();
+    fetchAll();
     return () => {
     };
   }, []);
-
-  console.log('selects', selects);
   return (
-    Object.keys(initialValue).length !== 0 && <Formik
-      initialValues={initialValue}
+    initialValues && additionalValues ? (<Formik
+      initialValues={initialValues}
       validationSchema={workOrder.schema}
       render={({ values, setFieldValue }) => (
         <div className="jet-form-wrapper">
@@ -92,15 +99,20 @@ const WorkOrder = ({ init }) => {
             <ErrorMessage name="date"/>
             station
             <Field component="select" name="station">
-              {Object.keys(selects).length !== 0
-              && selects.stations.results.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+              {
+                additionalValues['stations'].map(
+                  (item) => <option key={item.id} value={item.id}>{item.name}</option>
+                )
+              }
             </Field>
             <ErrorMessage name="station"/>
             customer
             <Field component="select" name="customer">
-              <option value="RW">RW</option>
-              <option value="second">second</option>
-              <option value="third">third</option>
+              {
+                additionalValues['customers'].map(
+                  (item) => <option key={item.id} value={item.id}>{item.name}</option>
+                )
+              }
             </Field>
             <ErrorMessage name="customer"/>
             customerWo
@@ -111,9 +123,11 @@ const WorkOrder = ({ init }) => {
             <ErrorMessage name="controller"/>
             aircraft type
             <Field component="select" name="aircraft">
-              <option value="E-175">E-175</option>
-              <option value="second">second</option>
-              <option value="third">third</option>
+              {
+                additionalValues['aircrafts'].map(
+                  (item) => <option key={item.id} value={item.id}>{item.name}</option>
+                )
+              }
             </Field>
             <ErrorMessage name="aircraft"/>
             aircraft reg
@@ -123,11 +137,7 @@ const WorkOrder = ({ init }) => {
             <Field name="aircraftLog"/>
             <ErrorMessage name="aircraftLog"/>
             outbound flight
-            <Field component="select" name="flightNumber">
-              <option value="first">first</option>
-              <option value="second">second</option>
-              <option value="third">third</option>
-            </Field>
+            <Field name="flightNumber" />
             <ErrorMessage name="flightNumber"/>
             t received call
             <Field name="callTime"/>
@@ -156,42 +166,43 @@ const WorkOrder = ({ init }) => {
             schedule time
             <Field
               component={DatePicker}
+              dateFormat="MM/dd/yyyy h:mm"
               selected={new Date(values.departScheduledTime)}
               onChange={date => {
                 !!date ? setFieldValue("departScheduledTime", date) : setFieldValue("departScheduledTime", "");
               }}
             />
             <ErrorMessage name="departScheduledTime"/>
+            {/*<hr/>*/}
+            {/*<FieldArray*/}
+            {/*  name="discrepancies"*/}
+            {/*  render={({ remove, push, name }) => (*/}
+            {/*    <div>*/}
+            {/*      {values[name].map((_, index) => (*/}
+            {/*        <div key={index}>*/}
+            {/*          <Field*/}
+            {/*            component="textarea"*/}
+            {/*            name={`${name}.${index}.reported`}*/}
+            {/*          />*/}
+            {/*          <ErrorMessage name={`${name}.${index}.reported`}/>*/}
+            {/*          <Field*/}
+            {/*            component="textarea"*/}
+            {/*            name={`${name}.${index}.action`}*/}
+            {/*          />*/}
+            {/*          <ErrorMessage name={`${name}.${index}.action`}/>*/}
+            {/*          <button type="button" onClick={() => remove(index)}>*/}
+            {/*            -*/}
+            {/*          </button>*/}
+            {/*        </div>*/}
+            {/*      ))}*/}
+            {/*      <button type="button" onClick={() => push("")}>*/}
+            {/*        Add another Discrepancy*/}
+            {/*      </button>*/}
+            {/*    </div>*/}
+            {/*  )}*/}
+            {/*/>*/}
             <hr/>
-            <FieldArray
-              name="discrepancies"
-              render={({ remove, push, name }) => (
-                <div>
-                  {values[name].map((_, index) => (
-                    <div key={index}>
-                      <Field
-                        component="textarea"
-                        name={`${name}.${index}.reported`}
-                      />
-                      <ErrorMessage name={`${name}.${index}.reported`}/>
-                      <Field
-                        component="textarea"
-                        name={`${name}.${index}.action`}
-                      />
-                      <ErrorMessage name={`${name}.${index}.action`}/>
-                      <button type="button" onClick={() => remove(index)}>
-                        -
-                      </button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => push("")}>
-                    Add another Discrepancy
-                  </button>
-                </div>
-              )}
-            />
-            <hr/>
-            <FieldArray
+            {initialValues.part && <FieldArray
               name="parts"
               render={({ remove, push, name }) => (
                 <div>
@@ -201,8 +212,11 @@ const WorkOrder = ({ init }) => {
                         component="select"
                         name={`${name}.${index}.pmiPart`}
                       >
-                        <option value="pmiPart">1776</option>
-                        <option value="second">second</option>
+                        {
+                          additionalValues['parts'].map(
+                            (item) => <option key={item.id} value={item.id}>{item.name}</option>
+                          )
+                        }
                       </Field>
                       <ErrorMessage name={`${name}.${index}.pmiPart`}/>
 
@@ -234,107 +248,107 @@ const WorkOrder = ({ init }) => {
                   </button>
                 </div>
               )}
-            />
-            <hr/>
-            <FieldArray
-              name="materials"
-              render={({ remove, push, name }) => (
-                <div>
-                  {values[name].map((_, index) => (
-                    <div key={index}>
-                      <Field
-                        component="select"
-                        name={`${name}.${index}.material`}
-                      >
-                        <option value="first">first</option>
-                        <option value="second">second</option>
-                      </Field>
-                      <ErrorMessage name={`${name}.${index}.material`}/>
+            />}
+            {/*<hr/>*/}
+            {/*<FieldArray*/}
+            {/*  name="materials"*/}
+            {/*  render={({ remove, push, name }) => (*/}
+            {/*    <div>*/}
+            {/*      {values[name].map((_, index) => (*/}
+            {/*        <div key={index}>*/}
+            {/*          <Field*/}
+            {/*            component="select"*/}
+            {/*            name={`${name}.${index}.material`}*/}
+            {/*          >*/}
+            {/*            <option value="first">first</option>*/}
+            {/*            <option value="second">second</option>*/}
+            {/*          </Field>*/}
+            {/*          <ErrorMessage name={`${name}.${index}.material`}/>*/}
 
-                      <Field name={`${name}.${index}.qty`}/>
-                      <ErrorMessage name={`${name}.${index}.qty`}/>
+            {/*          <Field name={`${name}.${index}.qty`}/>*/}
+            {/*          <ErrorMessage name={`${name}.${index}.qty`}/>*/}
 
-                      <Field
-                        component="select"
-                        name={`${name}.${index}.customerProvided`}
-                      >
-                        <option value={true}>Yes</option>
-                        <option value={false}>No</option>
-                      </Field>
-                      <ErrorMessage name="customerProvided"/>
-                      <button type="button" onClick={() => remove(index)}>
-                        -
-                      </button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => push("")}>
-                    Add another Materials Used
-                  </button>
-                </div>
-              )}
-            />
-            <hr/>
-            <FieldArray
-              name="equipments"
-              render={({ remove, push, name }) => (
-                <div>
-                  {values[name].map((_, index) => (
-                    <div key={index}>
-                      <Field
-                        component="select"
-                        name={`${name}.${index}.reported`}
-                      >
-                        <option value="Axle Jack">Axle Jack</option>
-                        <option value="second">second</option>
-                      </Field>
-                      <ErrorMessage name={`${name}.${index}.reported`}/>
+            {/*          <Field*/}
+            {/*            component="select"*/}
+            {/*            name={`${name}.${index}.customerProvided`}*/}
+            {/*          >*/}
+            {/*            <option value={true}>Yes</option>*/}
+            {/*            <option value={false}>No</option>*/}
+            {/*          </Field>*/}
+            {/*          <ErrorMessage name="customerProvided"/>*/}
+            {/*          <button type="button" onClick={() => remove(index)}>*/}
+            {/*            -*/}
+            {/*          </button>*/}
+            {/*        </div>*/}
+            {/*      ))}*/}
+            {/*      <button type="button" onClick={() => push("")}>*/}
+            {/*        Add another Materials Used*/}
+            {/*      </button>*/}
+            {/*    </div>*/}
+            {/*  )}*/}
+            {/*/>*/}
+            {/*<hr/>*/}
+            {/*<FieldArray*/}
+            {/*  name="equipments"*/}
+            {/*  render={({ remove, push, name }) => (*/}
+            {/*    <div>*/}
+            {/*      {values[name].map((_, index) => (*/}
+            {/*        <div key={index}>*/}
+            {/*          <Field*/}
+            {/*            component="select"*/}
+            {/*            name={`${name}.${index}.reported`}*/}
+            {/*          >*/}
+            {/*            <option value="Axle Jack">Axle Jack</option>*/}
+            {/*            <option value="second">second</option>*/}
+            {/*          </Field>*/}
+            {/*          <ErrorMessage name={`${name}.${index}.reported`}/>*/}
 
-                      <Field name={`${name}.${index}.hrs`}/>
-                      <ErrorMessage name={`${name}.${index}.hrs`}/>
-                      <button type="button" onClick={() => remove(index)}>
-                        -
-                      </button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => push("")}>
-                    Add another Equipment Used
-                  </button>
-                </div>
-              )}
-            />
-            <hr/>
-            <FieldArray
-              name="laborhours"
-              render={({ remove, push, name }) => (
-                <div>
-                  {values[name].map((_, index) => (
-                    <div key={index}>
-                      <Field
-                        component="select"
-                        name={`${name}.${index}.employee`}
-                      >
-                        <option value="816">816</option>
-                        <option value="second">second</option>
-                      </Field>
-                      <ErrorMessage name={`${name}.${index}.employee`}/>
+            {/*          <Field name={`${name}.${index}.hrs`}/>*/}
+            {/*          <ErrorMessage name={`${name}.${index}.hrs`}/>*/}
+            {/*          <button type="button" onClick={() => remove(index)}>*/}
+            {/*            -*/}
+            {/*          </button>*/}
+            {/*        </div>*/}
+            {/*      ))}*/}
+            {/*      <button type="button" onClick={() => push("")}>*/}
+            {/*        Add another Equipment Used*/}
+            {/*      </button>*/}
+            {/*    </div>*/}
+            {/*  )}*/}
+            {/*/>*/}
+            {/*<hr/>*/}
+            {/*<FieldArray*/}
+            {/*  name="laborhours"*/}
+            {/*  render={({ remove, push, name }) => (*/}
+            {/*    <div>*/}
+            {/*      {values[name].map((_, index) => (*/}
+            {/*        <div key={index}>*/}
+            {/*          <Field*/}
+            {/*            component="select"*/}
+            {/*            name={`${name}.${index}.employee`}*/}
+            {/*          >*/}
+            {/*            <option value="816">816</option>*/}
+            {/*            <option value="second">second</option>*/}
+            {/*          </Field>*/}
+            {/*          <ErrorMessage name={`${name}.${index}.employee`}/>*/}
 
-                      <Field name={`${name}.${index}.sgnHrs`}/>
-                      <ErrorMessage name={`${name}.${index}.sgnHrs`}/>
+            {/*          <Field name={`${name}.${index}.sgnHrs`}/>*/}
+            {/*          <ErrorMessage name={`${name}.${index}.sgnHrs`}/>*/}
 
-                      <Field name={`${name}.${index}.uscHrs`}/>
-                      <ErrorMessage name={`${name}.${index}.uscHrs`}/>
-                      <button type="button" onClick={() => remove(index)}>
-                        -
-                      </button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => push("")}>
-                    Add another Labor Hours
-                  </button>
-                </div>
-              )}
-            />
-            <hr/>
+            {/*          <Field name={`${name}.${index}.uscHrs`}/>*/}
+            {/*          <ErrorMessage name={`${name}.${index}.uscHrs`}/>*/}
+            {/*          <button type="button" onClick={() => remove(index)}>*/}
+            {/*            -*/}
+            {/*          </button>*/}
+            {/*        </div>*/}
+            {/*      ))}*/}
+            {/*      <button type="button" onClick={() => push("")}>*/}
+            {/*        Add another Labor Hours*/}
+            {/*      </button>*/}
+            {/*    </div>*/}
+            {/*  )}*/}
+            {/*/>*/}
+            {/*<hr/>*/}
             servicing distribution
             <Field name="engineOil1"/>
             <ErrorMessage name="engineOil1"/>
@@ -407,7 +421,7 @@ const WorkOrder = ({ init }) => {
             <ErrorMessage name="notes"/>
             <hr/>
             sign off
-            <FieldArray
+            {/*            <FieldArray
               name="techtimes"
               render={({ remove, push, name }) => (
                 <div>
@@ -460,83 +474,7 @@ const WorkOrder = ({ init }) => {
                   </button>
                 </div>
               )}
-            />
-            {/*
-
-          <FieldArray
-            name="partsUsed"
-            render={({ remove, push, name }) => (
-              <div>
-                {values[name].map((_, index) => (
-                  <div key={index}>
-                    <Field
-                      component="select"
-                      name={`${name}.${index}.descriptionPart`}
-                    >
-                      <option value="first">first</option>
-                      <option value="second">second</option>
-                    </Field>
-                    <ErrorMessage name={`${name}.${index}.descriptionPart`} />
-
-                    <Field name={`${name}.${index}.quantity`} />
-                    <ErrorMessage name={`${name}.${index}.quantity`} />
-
-                    <Field
-                      component="select"
-                      name={`${name}.${index}.customerProvided`}
-                    >
-                      <option value="true">Yes</option>
-                      <option value="false">No</option>
-                    </Field>
-                    <ErrorMessage name="customerProvided" />
-
-                    <Field name={`${name}.${index}.description`} />
-                    <Field name={`${name}.${index}.productNumber`} />
-                    <Field name={`${name}.${index}.serialNumber`} />
-                    <button type="button" onClick={() => remove(index)}>
-                      -
-                    </button>
-                  </div>
-                ))}
-                <button type="button" onClick={() => push("")}>
-                  Add another Parts Used
-                </button>
-              </div>
-            )}
-          />
-
-
-
-          <FieldArray
-            name="equipmentUsed"
-            render={({ remove, push, name }) => (
-              <div>
-                {values[name].map((_, index) => (
-                  <div key={index}>
-                    <Field
-                      component="select"
-                      name={`${name}.${index}.reported`}
-                    >
-                      <option value="first">first</option>
-                      <option value="second">second</option>
-                    </Field>
-                    <ErrorMessage name={`${name}.${index}.reported`} />
-
-                    <Field name={`${name}.${index}.correctiveAction`} />
-                    <ErrorMessage name={`${name}.${index}.correctiveAction`} />
-                    <button type="button" onClick={() => remove(index)}>
-                      -
-                    </button>
-                  </div>
-                ))}
-                <button type="button" onClick={() => push("")}>
-                  Add another Equipment Used
-                </button>
-              </div>
-            )}
-          />
-
-          */}
+            />*/}
             <button type="submit">Submit</button>
           </Form>
           <pre className="popup">
@@ -544,7 +482,7 @@ const WorkOrder = ({ init }) => {
           </pre>
         </div>
       )}
-    />
+    />) : null
   );
 };
 
